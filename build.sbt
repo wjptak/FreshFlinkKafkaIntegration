@@ -46,4 +46,4 @@ Global / cancelable := true
 assembly / assemblyOption  := (assembly / assemblyOption).value.copy(includeScala = false)
 
 // Generate Avro schemas
-// sourceGenerators in Compile += (avroScalaGenerateSpecific in Compile).taskValue
+ //sourceGenerators in Compile += (avroScalaGenerateSpecific in Compile).taskValue
