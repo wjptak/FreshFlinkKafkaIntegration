@@ -17,12 +17,16 @@ val flinkDependencies = Seq(
   "org.apache.flink" %% "flink-scala" % flinkVersion % Compile,
   "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % Compile,
   "org.apache.flink" %% "flink-connector-kafka" % flinkVersion,
-  "org.apache.flink" % "flink-avro-confluent-registry" % flinkVersion
+  "org.apache.flink" % "flink-avro-confluent-registry" % flinkVersion,
+  "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkVersion,
+  "org.apache.flink" % "flink-metrics-dropwizard" % flinkVersion
 )
 
 val otherDependencies = Seq(
   "io.confluent" % "kafka-avro-serializer" % "5.0.0",
-  "org.apache.kafka" % "kafka-clients" % "2.0.0"
+  "org.apache.kafka" % "kafka-clients" % "2.0.0",
+  "com.typesafe" % "config" % "1.3.2",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 )
 
 lazy val root = (project in file(".")).
@@ -30,7 +34,7 @@ lazy val root = (project in file(".")).
     libraryDependencies ++= flinkDependencies ++ otherDependencies
   )
 
-assembly / mainClass := Some("com.freshmail.Job")
+assembly / mainClass := Some("com.freshmail.MessagesRejectedJob")
 
 // make run command include the provided dependencies
 Compile / run  := Defaults.runTask(Compile / fullClasspath,

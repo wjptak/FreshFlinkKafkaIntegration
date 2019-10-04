@@ -20,31 +20,29 @@ package com.freshmail
 
 import java.util.Properties
 
-import collection.JavaConverters._
-import io.confluent.kafka.serializers.{AbstractKafkaAvroSerDeConfig, KafkaAvroDeserializer}
-import org.apache.flink.api.common.serialization.SimpleStringSchema
+import com.freshmail.events.parserly.message_delivery_state
+import com.freshmail.model.MessageRejected
 import org.apache.flink.api.scala._
 import org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
-import com.freshmail.events.parserly.message_delivery_state
-import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
 
-import scala.io.Source
-
-object Job {
+object MessagesRejectedJob {
   def main(args: Array[String]) {
     // set up the execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val inputTopic = "external_parserly_message-rejected"
 
-    val inputStream : DataStream[message_delivery_state] = env.addSource(
-      messageSource(inputTopic)
-    ).uid("message-source")
+    val inputStream : DataStream[MessageRejected] =
+      env.addSource(messageSource(inputTopic)).name("message-source").uid("message-source")
+        .flatMap(new ConvertToMessageRejected).name("conversion")
 
-    inputStream.print()
+    val counts = inputStream.flatMap{ _.message.toLowerCase.split("\\W+") filter { _.nonEmpty } }
+      .map { (_, 1) }
+      .keyBy(0)
+      .sum(1)
+      .print()
 
     // execute program
     env.execute("Flink Scala API Skeleton")
@@ -61,12 +59,13 @@ object Job {
     val schemaRegistryUrl = "http://kafka-b1af18ba.prod.freshmail.network:8081"
 
     /**
-     * /*ConfluentRegistryAvroDeserializationSchema.forSpecific[message_delivery_state](classOf[message_delivery_state], schemaRegistryUrl),*/
+     * ConfluentRegistryAvroDeserializationSchema.forSpecific[message_delivery_state](classOf[message_delivery_state], schemaRegistryUrl),
      */
 
     new FlinkKafkaConsumer[message_delivery_state](
       inputTopic,
-      ConfluentRegistryAvroDeserializationSchema.forSpecific(classOf[message_delivery_state],schemaRegistryUrl),
+      /*ConfluentRegistryAvroDeserializationSchema.forGeneric(Schema.parse(Source.fromFile("./src/main/avro/message-state.avsc").mkString), schemaRegistryUrl),*/
+      ConfluentRegistryAvroDeserializationSchema.forSpecific[message_delivery_state](classOf[message_delivery_state], schemaRegistryUrl),
       properties
     )
   }
