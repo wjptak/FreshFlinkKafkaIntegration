@@ -40,7 +40,7 @@ object Job {
 
     val inputTopic = "external_parserly_message-rejected"
 
-    val inputStream : DataStream[GenericRecord] = env.addSource(
+    val inputStream : DataStream[message_delivery_state] = env.addSource(
       messageSource(inputTopic)
     ).uid("message-source")
 
@@ -50,7 +50,7 @@ object Job {
     env.execute("Flink Scala API Skeleton")
   }
 
-  private def messageSource(inputTopic: String): FlinkKafkaConsumer[GenericRecord] = {
+  private def messageSource(inputTopic: String): FlinkKafkaConsumer[message_delivery_state] = {
 
     val properties = new Properties()
     properties.setProperty("bootstrap.servers",
@@ -64,9 +64,9 @@ object Job {
      * /*ConfluentRegistryAvroDeserializationSchema.forSpecific[message_delivery_state](classOf[message_delivery_state], schemaRegistryUrl),*/
      */
 
-    new FlinkKafkaConsumer[GenericRecord](
+    new FlinkKafkaConsumer[message_delivery_state](
       inputTopic,
-      ConfluentRegistryAvroDeserializationSchema.forGeneric(Schema.parse(Source.fromFile("./src/main/avro/message-state.avsc").mkString), schemaRegistryUrl),
+      ConfluentRegistryAvroDeserializationSchema.forSpecific(classOf[message_delivery_state],schemaRegistryUrl),
       properties
     )
   }
