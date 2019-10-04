@@ -36,18 +36,13 @@ object MessagesRejectedJob {
     config.stateBackendConfig.configure(env)
     config.checkpointingConfig.configure(env)
 
-    val inputStream : DataStream[MessageRejected] =
-      env.addSource(messageSource(config)).name("message-source").uid("message-source")
-        .flatMap(new ConvertToMessageRejected).name("conversion")
-
-    val counts = inputStream.flatMap{ _.message.toLowerCase.split("\\W+") filter { _.nonEmpty } }
-      .map { (_, 1) }
-      .keyBy(0)
-      .sum(1)
+    env.addSource(messageSource(config)).name("message-source").uid("message-source")
+      .flatMap(new ConvertToMessageRejected).name("conversion")
+      .map(new EvaluateMessage()).name("countWords")
       .print()
 
     // execute program
-    env.execute("Flink Scala API Skeleton")
+    env.execute("Message Rejected Evaluator")
   }
 
   private def messageSource(config: MessageRejectedJobConfig): FlinkKafkaConsumer[message_delivery_state] = {
